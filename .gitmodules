@@ -1,0 +1,3 @@
+[submodule "sigma"]
+	path = sigma
+	url = https://greengb@dev.azure.com/greengb/sigma/_git/sigma
