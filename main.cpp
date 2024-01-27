@@ -7,6 +7,7 @@
 #include "Test_Sphere_Fitting.hpp"
 #include "Least_Square_Fit_Sphere.hpp"
 #include "Sumith_YD_Fit_Sphere.hpp"
+#include "Eberly_iteration_Fit_Sphere.hpp"
 #include "MSAC_Fit_Sphere.hpp"
 #include "Levenberg_Marquardt_Fit_Sphere.hpp"
 #include <iostream>
@@ -21,8 +22,8 @@ static auto Testbed()
 
 	auto constexpr nof_points = std::size_t(10'000);
 	auto constexpr gaussian_noise_sigma = real_t(10);
-	auto constexpr partial_rate = real_t(0.75);
-	auto constexpr ran_seed = std::uint64_t(2);
+	auto constexpr partial_rate = real_t(0.6);
+	auto constexpr ran_seed = std::uint64_t(777);
 
 	static_assert(nof_points >= dimension + 1);
 	static_assert(gaussian_noise_sigma >= 0);
@@ -53,12 +54,12 @@ int main()
 	prac::test::Test_Sphere_Fitting const testbed = ::Testbed();
 
 	using real_t = typename decltype(testbed)::elem_t;
-	auto constexpr dim = decltype(testbed)::Dim;
+	static auto constexpr dim = decltype(testbed)::Dim;
 
 	auto const& sample_points = testbed.sample_points();
 
 	auto report_f
-	= [&testbed, dim](sgm::Array<real_t, dim+1> const& result_sphere, char const* title)
+	= [&testbed](sgm::Array<real_t, dim+1> const& result_sphere, char const* title)
 	{
 		auto const [dc, dr] = +testbed.test(result_sphere);
 
@@ -90,13 +91,20 @@ int main()
 	
 	report_f( prac::Least_square_fit_sphere<real_t, dim>(sample_points), "Least Square" );
 	report_f( prac::Sumith_YD_fit_sphere<real_t, dim>(sample_points), "Sumith YD" );
+
+	if
+	(	auto const result = prac::Eberly_fit_sphere<real_t, dim>(sample_points, 200)
+	;	result.has_value()
+	)
+		report_f(result.v(), "Eberly's iteration");
+	else
+		std::cerr << "Eberly's iteration fitting Failed." << std::endl;
 	
-	report_f
-	(	prac::MSAC_fit_sphere<real_t, dim>( sample_points, 1'000, real_t(20) ), "MSAC"
-	);
+	
+	report_f( prac::MSAC_fit_sphere<real_t, dim>( sample_points, 1'000, real_t(20) ), "MSAC" );
 
 	{
-		auto constexpr stable_ratio_diff = real_t(1e-3);
+		auto constexpr stable_ratio_diff = real_t(1e-4);
 		auto constexpr max_iteration = std::size_t(20);
 		auto const mu = real_t( std::exp(1) );
 
