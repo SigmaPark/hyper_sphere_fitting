@@ -1,3 +1,9 @@
+/*  SPDX-FileCopyrightText: (c) 2024 Jin-Eon Park <greengb@naver.com> <sigma@gm.gist.ac.kr>
+*   SPDX-License-Identifier: MIT License
+*/
+//========//========//========//========//=======#//========//========//========//========//=======#
+
+
 #pragma once
 #ifndef _PRAC_EBERLY_FIT_SPHERE_
 #define _PRAC_EBERLY_FIT_SPHERE_
