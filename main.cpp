@@ -58,50 +58,28 @@ int main()
 
 	auto const& sample_points = testbed.sample_points();
 
-	auto report_f
-	= [&testbed](sgm::Array<real_t, dim+1> const& result_sphere, char const* title)
-	{
-		auto const [dc, dr] = +testbed.test(result_sphere);
-
-		auto const rmse
-		= 	[	&c = *reinterpret_cast< s3d::Vector<real_t, dim> const* >(result_sphere.data())
-			,	r = result_sphere.back()
-			, 	&samples = testbed.sample_points()
-			]
-		{
-			real_t s = 0;
-
-			for(auto const& v :  samples)
-				s += std::pow( (v - c).norm() - r, 2 );
-
-			return std::sqrt(s / samples.size());
-		}();
-
-		std::cout 
-		<<	title 
-		<<	" : dc = " << dc << ", dr = " << dr << ", rmse = " << rmse << std::endl;
-	};
-
 	std::cout << std::endl;
 
-	report_f
+	testbed.dc_dr_rmse
 	( 	*reinterpret_cast< sgm::Array<real_t, dim+1> const* >(&testbed.original_sphere())
 	, 	"Original Sphere" 
 	);
 	
-	report_f( prac::Least_square_fit_sphere<real_t, dim>(sample_points), "Least Square" );
-	report_f( prac::Sumith_YD_fit_sphere<real_t, dim>(sample_points), "Sumith YD" );
+	testbed.dc_dr_rmse( prac::Least_square_fit_sphere<real_t, dim>(sample_points), "Least Square" );
+	testbed.dc_dr_rmse( prac::Sumith_YD_fit_sphere<real_t, dim>(sample_points), "Sumith YD" );
 
 	if
 	(	auto const result = prac::Eberly_fit_sphere<real_t, dim>(sample_points, 200)
 	;	result.has_value()
 	)
-		report_f(result.v(), "Eberly's iteration");
+		testbed.dc_dr_rmse(result.v(), "Eberly's iteration");
 	else
 		std::cerr << "Eberly's iteration fitting Failed." << std::endl;
 	
 	
-	report_f( prac::MSAC_fit_sphere<real_t, dim>( sample_points, 1'000, real_t(20) ), "MSAC" );
+	testbed.dc_dr_rmse
+	( 	prac::MSAC_fit_sphere<real_t, dim>( sample_points, 1'000, real_t(20) ), "MSAC" 
+	);
 
 	{
 		auto constexpr stable_ratio_diff = real_t(1e-4);
@@ -125,7 +103,7 @@ int main()
 			);
 
 		if(result.has_value())
-			report_f(result, "Levenberg-Marquardt");
+			testbed.dc_dr_rmse(result, "Levenberg-Marquardt");
 		else
 			std::cerr << "Levenberg-Marquardt fitting Failed." << std::endl;
 	}

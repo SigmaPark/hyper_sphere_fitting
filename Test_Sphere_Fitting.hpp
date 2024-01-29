@@ -26,14 +26,6 @@ namespace prac::test
 	template<class T, std::size_t D>
 	class Test_Sphere_Fitting;
 
-
-    template<class T, std::size_t D>
-    static auto Sample_points
-    (	std::size_t const nof_points, Hyper_Sphere<T, D> const& answer_sphere
-	,	T const gaussian_noise_sigma, T const partial_rate
-	,	std::uint64_t const ran_seed 
-    )->	sgm::Array< s3d::Vector<T, D> >;
-
 }
 //--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
 
@@ -69,8 +61,9 @@ public:
 
 	auto sample_points() const noexcept-> sgm::Array<Vec_t> const&;
 	auto original_sphere() const noexcept-> Sphere_t const&;
-	auto test(Sphere_t const& fit_sphere) const noexcept-> sgm::Array<T, 2>;
-	auto test(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 2>;
+	
+	auto dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere, char const* title = "") const noexcept
+	->	sgm::Array<T, 3>;
 
 private:
 	sgm::Array<Vec_t> _points;
@@ -124,24 +117,40 @@ auto prac::test::Test_Sphere_Fitting<T, D>::original_sphere() const noexcept
 
 template<class T, std::size_t D>
 auto prac::test::Test_Sphere_Fitting<T, D>
-::	test(Sphere_t const& fit_sphere) const noexcept-> sgm::Array<T, 2>
+::	dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere, char const* title) const noexcept
+-> 	sgm::Array<T, 3>
 {
-	return
-	{	s3d::Distance(fit_sphere.center, original_sphere().center)
-	,	fit_sphere.radius - original_sphere().radius
-	};
-}
+	auto const fit_sph
+	= [&fit_sphere]()-> Sphere_t
+	{
+		Vec_t c;
 
-template<class T, std::size_t D>
-auto prac::test::Test_Sphere_Fitting<T, D>
-::	test(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 2>
-{
-	Vec_t c;
+		for(std::size_t k = 0;  k < D;  ++k)
+			c(k) = fit_sphere[k];
 
-	for(std::size_t k = 0;  k < D;  ++k)
-		c(k) = fit_sphere[k];
+		return {c, fit_sphere[D]};
+	}();
 
-	return test(Sphere_t{c, fit_sphere[D]});
+	auto const rmse_dist
+	= [&fit_sph, &points = sample_points()]
+	{
+		auto sqr_f = [](T const t){  return t*t;  };
+
+		T sqrsum = 0;
+
+		for(auto const& pt : points)
+			sqrsum += sqr_f( (pt - fit_sph.center).norm() - fit_sph.radius );
+
+		return std::sqrt(sqrsum/points.size());
+	}();
+
+	T const 
+		dc = s3d::Distance(fit_sph.center, original_sphere().center),
+		dr = fit_sph.radius - original_sphere().radius;
+
+	std::cout << title << " : dc = " << dc << ", dr = " << dr << ", rmse = " << rmse_dist << std::endl;	
+
+	return {dc, dr, rmse_dist};
 }
 
 
