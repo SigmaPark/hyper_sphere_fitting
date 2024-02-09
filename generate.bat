@@ -3,7 +3,7 @@
 ::========::========::========::========::=======#::========::========::========::========::=======#
 
 
-powershell rm --recurse ./build
+powershell rm -recurse -force ./build
 
 mkdir build
 cd build
