@@ -22,3 +22,9 @@ target_include_directories(
     ${EIGEN_LIBRARY_DIR}
     sigma/include
 )
+
+target_compile_definitions(
+    Sphere_Fitting
+    PRIVATE
+    -DSGM_CXX_STANDARD=2017
+)

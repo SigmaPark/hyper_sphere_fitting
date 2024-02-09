@@ -115,8 +115,7 @@ public:
 	auto sample_points() const noexcept-> sgm::Array<Vec_t> const&;
 	auto original_sphere() const noexcept-> Sphere_t const&;
 	
-	auto dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere, char const* title = "") const noexcept
-	->	sgm::Array<T, 3>;
+	auto dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 3>;
 
 private:
 	sgm::Array<Vec_t> _points;
@@ -165,8 +164,7 @@ auto prac::test::Test_Sphere_Fitting<T, D>::original_sphere() const noexcept
 
 template<class T, std::size_t D>
 auto prac::test::Test_Sphere_Fitting<T, D>
-::	dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere, char const* title) const noexcept
--> 	sgm::Array<T, 3>
+::	dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 3>
 {
 	auto const fit_sph
 	= [&fit_sphere]()-> Sphere_t

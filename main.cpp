@@ -10,47 +10,12 @@
 #include "Eberly_iteration_Fit_Sphere.hpp"
 #include "MSAC_Fit_Sphere.hpp"
 #include "Levenberg_Marquardt_Fit_Sphere.hpp"
+#include <string>
 #include <iostream>
 #include <chrono>
 #include <map>
 #include <cassert>
 
-#if 0
-static auto Testbed()
-{
-	using real_t = double;
-	auto constexpr dimension = std::size_t(3);
-
-	using Vec_t = s3d::Vector<real_t, dimension>;
-
-	auto constexpr nof_points = std::size_t(10'000);
-	auto constexpr gaussian_noise_sigma = real_t(10);
-	auto constexpr partial_rate = real_t(0.6);
-	auto constexpr ran_seed = std::uint64_t(777);
-
-	static_assert(nof_points >= dimension + 1);
-	static_assert(gaussian_noise_sigma >= 0);
-	static_assert(0 <= partial_rate && partial_rate <= 1);
-
-	auto random_vec_f
-	= [dimension, rng = std::mt19937_64{ran_seed}]() mutable-> Vec_t
-	{
-		std::uniform_real_distribution<real_t> urd(-500, 500);
-		Vec_t res;
-
-		for( std::size_t k = 0;  k < dimension;  res(k++) = urd(rng) );
-
-		return res;
-	};
-
-	prac::test::Hyper_Sphere<real_t, dimension> const answer_sphere{random_vec_f(), real_t(1'000)};
-
-	return
-	prac::test::Test_Sphere_Fitting<real_t, dimension>
-	(	answer_sphere, nof_points, gaussian_noise_sigma, partial_rate, ran_seed
-	);
-}
-#endif
 
 template<class T>
 class Rms_and_stdev
@@ -88,16 +53,15 @@ private:
 	T _sum, _sqr_sum;
 	std::size_t _nof_data;
 };
+//--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
 
 
 template<class T>
 class Test_Records
 {
 public:
-	auto record_result(sgm::Family<T, T, T> const& dc_dr_rmse) noexcept-> void
+	auto record_result(T const dc, T const dr, T const rmse) noexcept-> void
 	{
-		auto const& [dc, dr, rmse] = dc_dr_rmse;
-
 		_dc.record(dc);
 		_dr.record(dr);
 		_rmse.record(rmse);
@@ -107,7 +71,11 @@ public:
 	{
 		using time_unit_t = std::chrono::microseconds;
 
-		_time.record( std::chrono::duration_cast<time_unit_t>(time).count() );
+		_time.record
+		(	static_cast<T>
+			(	std::chrono::duration_cast<time_unit_t>(time).count() 
+			)
+		);
 	}
 
 	auto record_as_failure() noexcept-> void
@@ -115,7 +83,7 @@ public:
 		++_nof_failed;
 	}
 
-	auto report(char const* title) const-> void
+	auto report(std::string const& title) const-> void
 	{
 		auto const nof_success = _rmse.nof_data();
 
@@ -135,7 +103,7 @@ public:
 
 
 		std::cout 
-		<<	title 
+		<<	title << std::endl
 		<<	'\t' <<	nof_success << " pass out of " << nof_success + _nof_failed << std::endl
 		<<	'\t' << "dc = " << rms_dc << " +- " << sigma_dc << std::endl
 		<<	'\t' << "dr = " << rms_dr << " +- " << sigma_dr << std::endl
@@ -148,6 +116,7 @@ private:
 	Rms_and_stdev<T> _dc{}, _dr{}, _rmse{}, _time{};
 	std::size_t _nof_failed = 0;
 };
+//--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
 
 
 template<class TREC, class MEASURE, class FN, class...ARGS>
@@ -165,9 +134,9 @@ static auto Add_test_result(TREC& rec, MEASURE&& measure, FN&& fn, ARGS&&...args
 			return;
 		}
 
-	auto const [dc, dr, rmse] = measure(result);
+	auto const [dc, dr, rmse] = +measure(result);
 
-	rec.record_result({dc, dr, rmse});
+	rec.record_result(dc, dr, rmse);
 	rec.record_time(time);
 }
 
@@ -189,15 +158,15 @@ int main()
 		return {-max_position, max_position, sphere_radius, 0};
 	}();
 	
-	size_t constexpr nof_points_per_test = size_t(1'000);
+	auto constexpr nof_points_per_test = size_t(1'000);
 	auto constexpr gaussian_noise_sigma = real_t(10);
 	auto constexpr partial_rate = real_t(0.6);
 
-	size_t constexpr nof_tests = size_t(100);
+	auto constexpr nof_tests = size_t(100);
 	auto constexpr ran_seed = std::uint64_t(777);
 	
 	std::mt19937_64 ran_engine{ran_seed};
-	std::map< char const*, Test_Records<real_t> > fitting_method;
+	std::map< std::string, Test_Records<real_t> > fitting_method;
 
 	for(auto count = nof_tests;  count-->0;)
 	{
@@ -206,15 +175,11 @@ int main()
 		, 	ran_engine
 		);
 
-		auto measure_f
-		= [&testbed](auto const& result)-> sgm::Family<real_t, real_t, real_t>
-		{
-			auto [dc, dr, rmse] = +testbed.dc_dr_rmse(result);
-
-			return {dc, dr, rmse};
-		};
+		auto const measure_f
+		=	sgm::Memfunc(testbed, &prac::test::Test_Sphere_Fitting<real_t, Dim>::dc_dr_rmse);
 
 		auto const& sample_points = testbed.sample_points();
+
 
 		Add_test_result
 		(	fitting_method["Least Square"], measure_f
@@ -243,7 +208,9 @@ int main()
 			auto const mu = real_t( std::exp(1) );
 
 			auto initial_sphere 
-			=	*reinterpret_cast< sgm::Array<real_t, Dim+1> const* >(&testbed.original_sphere());
+			=	*reinterpret_cast< sgm::Array<real_t, Dim+1> const* >
+				(	&testbed.original_sphere()
+				);
 
 			std::mt19937_64 ran_eng{0};
 			std::normal_distribution<real_t> nd(0, initial_sphere[Dim]/10);
@@ -275,3 +242,4 @@ int main()
 
     return 0;
 }
+//--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
