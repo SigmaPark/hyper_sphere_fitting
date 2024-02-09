@@ -24,6 +24,9 @@ namespace prac::test
 
 
 	template<class T, std::size_t D>
+	class Random_hyper_sphere;
+
+	template<class T, std::size_t D>
 	class Test_Sphere_Fitting;
 
 }
@@ -39,6 +42,51 @@ struct prac::test::Hyper_Sphere
 	s3d::Vector<T, D> center;
 	T radius;
 };
+//--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
+
+
+template<class T, std::size_t D>
+class prac::test::Random_hyper_sphere
+{
+public:
+	Random_hyper_sphere(T const min_x, T const max_x, T const mu_r, T const sigma_r) noexcept;
+
+	auto get(std::mt19937_64& ran_eng) const noexcept-> Hyper_Sphere<T, D>;
+
+private:
+	T _min_x, _max_x, _mu_r, _sigma_r;
+};
+
+
+template<class T, std::size_t D>
+prac::test::Random_hyper_sphere<T, D>
+::	Random_hyper_sphere(T const min_x, T const max_x, T const mu_r, T const sigma_r) noexcept
+:	_min_x(min_x), _max_x(max_x), _mu_r(mu_r), _sigma_r(sigma_r)
+{}
+
+
+template<class T, std::size_t D>
+auto prac::test::Random_hyper_sphere<T, D>
+::	get(std::mt19937_64& ran_eng) const noexcept-> Hyper_Sphere<T, D>
+{
+	auto const center
+	= [min_x = _min_x, max_x = _max_x, &ran_eng]()-> s3d::Vector<T, D>
+	{
+		std::uniform_real_distribution<T> urd(min_x, max_x);
+		s3d::Vector<T, D> res;
+
+		for( std::size_t k = 0;  k < D;  res(k++) = urd(ran_eng) );
+
+		return res;
+	}();
+
+	auto const radius
+	=	_sigma_r == 0 ? _mu_r
+	:	std::normal_distribution<T>(_mu_r, _sigma_r)(ran_eng);
+
+	return {center, radius};
+}
+//--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
 
 
 template<class T, std::size_t D>
@@ -53,8 +101,13 @@ public:
 
 	Test_Sphere_Fitting
 	(	Sphere_t const& sphere, std::size_t const nof_points
-	,	T const gaussian_noise_sigma, T const partial_rate, std::uint64_t const ran_seed
+	,	T const gaussian_noise_sigma, T const partial_rate, std::mt19937_64& ran_engine
 	);
+
+	auto reset
+	(	Sphere_t const& sphere, std::size_t const nof_points
+	,	T const gaussian_noise_sigma, T const partial_rate, std::mt19937_64& ran_engine
+	)->	void;
 
 	Test_Sphere_Fitting(Test_Sphere_Fitting const&) = delete;
 	auto operator=(Test_Sphere_Fitting const&)-> Test_Sphere_Fitting& = delete;
@@ -62,8 +115,7 @@ public:
 	auto sample_points() const noexcept-> sgm::Array<Vec_t> const&;
 	auto original_sphere() const noexcept-> Sphere_t const&;
 	
-	auto dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere, char const* title = "") const noexcept
-	->	sgm::Array<T, 3>;
+	auto dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 3>;
 
 private:
 	sgm::Array<Vec_t> _points;
@@ -73,35 +125,30 @@ private:
 	static auto _Generate_samples
 	(	std::size_t const nof_points, Sphere_t const& answer_sphere
 	,	T const gaussian_noise_sigma, T const partial_rate
-	,	std::uint64_t const ran_seed
+	,	std::mt19937_64& ran_engine
 	)->	sgm::Array<Vec_t>;
 };
 
 
 template<class T, std::size_t D>
+auto prac::test::Test_Sphere_Fitting<T, D>
+::	reset
+(	Sphere_t const& sphere, std::size_t const nof_points
+, 	T const gaussian_noise_sigma, T const partial_rate, std::mt19937_64& ran_engine
+)->	void
+{
+	_points = _Generate_samples(nof_points, sphere, gaussian_noise_sigma, partial_rate, ran_engine);
+	_answer_sphere = sphere;
+}
+
+
+template<class T, std::size_t D>
 prac::test::Test_Sphere_Fitting<T, D>::Test_Sphere_Fitting
 (	Sphere_t const& sphere, std::size_t const nof_points
-, 	T const gaussian_noise_sigma, T const partial_rate, std::uint64_t const ran_seed
-)
-:	_points( _Generate_samples(nof_points, sphere, gaussian_noise_sigma, partial_rate, ran_seed) )
-,	_answer_sphere(sphere)
+, 	T const gaussian_noise_sigma, T const partial_rate, std::mt19937_64& ran_engine
+) :	_points(), _answer_sphere()
 {
-	using std::cout, std::endl;
-
-	cout 
-	<<	"sphere dimension = " << D << endl
-	<<	"max #of sample points = " << nof_points << endl
-	<<	"gaussian noise sigma = " << gaussian_noise_sigma << endl
-	<<	"sphere partial rate = " << 100*partial_rate << " %\n";
-
-	cout << "original sphere center = [";
-
-	for(std::size_t k = 0;  k < D;  cout << ", ",  ++k)
-		cout << sphere.center(k);
-
-	cout << "]\n";
-
-	cout << "original sphere radius = " << sphere.radius << endl;	
+	reset(sphere, nof_points, gaussian_noise_sigma, partial_rate, ran_engine);  
 }
 
 
@@ -117,8 +164,7 @@ auto prac::test::Test_Sphere_Fitting<T, D>::original_sphere() const noexcept
 
 template<class T, std::size_t D>
 auto prac::test::Test_Sphere_Fitting<T, D>
-::	dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere, char const* title) const noexcept
--> 	sgm::Array<T, 3>
+::	dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 3>
 {
 	auto const fit_sph
 	= [&fit_sphere]()-> Sphere_t
@@ -148,8 +194,6 @@ auto prac::test::Test_Sphere_Fitting<T, D>
 		dc = s3d::Distance(fit_sph.center, original_sphere().center),
 		dr = fit_sph.radius - original_sphere().radius;
 
-	std::cout << title << " : dc = " << dc << ", dr = " << dr << ", rmse = " << rmse_dist << std::endl;	
-
 	return {dc, dr, rmse_dist};
 }
 
@@ -158,7 +202,7 @@ template<class T, std::size_t D>
 auto prac::test::Test_Sphere_Fitting<T, D>::_Generate_samples
 (	std::size_t const nof_points, Sphere_t const& answer_sphere
 ,	T const gaussian_noise_sigma, T const partial_rate
-,	std::uint64_t const ran_seed
+,	std::mt19937_64& ran_engine
 )->	sgm::Array<Vec_t>
 {
 	assert(nof_points >= D + 1);
@@ -166,8 +210,6 @@ auto prac::test::Test_Sphere_Fitting<T, D>::_Generate_samples
 	assert(0 <= partial_rate && partial_rate <= 1);
 
 	using UnitVec_t = s3d::UnitVec<T, D>;
-
-	std::mt19937_64 ran_engine{ran_seed};
 
 	auto uniform_random_direction_f
 	= [&rng = ran_engine]()-> UnitVec_t
