@@ -9,6 +9,7 @@
 #define _PRAC_LEAST_SQUARE_FIT_SPHERE_
 
 #include "Sphere_Fitting_interface.hpp"
+#include "_Matrix_operations.hpp"
 
 
 namespace prac
@@ -28,39 +29,36 @@ auto prac::Least_square_fit_sphere(CON const& con)-> sgm::Array<T, D+1>
 	auto const [M, g]
 	= [&con]
 	{
-		s3d::Matrix<T, D + 1, D + 1> M = decltype(M)::Zero();
-		s3d::Vector<T, D + 1> g = decltype(g)::Zero();
+		s3d::Matrix<T, D+1, D+1> M = decltype(M)::Zero();
+		s3d::Vector<T, D+1> g = decltype(g)::Zero();
 
 		for(auto const& p : con)
 		{
 			auto const& v = sph_fit::To_Vector<T, D>(p);
 			auto const vv = v.sqr_norm();
-	
-			for(size_t i = 0;  i < D;  ++i)
-			{
-				g(i) += 2*v(i)*vv;
-		
-				for(size_t j = i;  j < D;  ++j)
-					M(i, j) += 4*v(i)*v(j);
-			}
-
-			g(D) += vv;
-		
-			for(size_t i = 0;  i < D;  ++i)
-				M(i, D) += 2*v(i);
 			
-			M(D, D) += 1;
+			auto const a 
+			= [&v]() noexcept-> s3d::Vector<T, D+1>
+			{
+				s3d::Vector<T, D+1> res;
+
+				res.head(D) = 2*v;
+				res(D) = 1;
+
+				return res;
+			}();
+
+			M += mat_op_helper::Self_dyadic_upper<T, D+1>(a);
+			g += vv*a;
 		}
-		
-		for(size_t i = 0;  i < D + 1;  ++i)
-			for(size_t j = 0;  j < i;  ++j)
-				M(i, j) = M(j, i);
+
+		mat_op_helper::Copy_upper_to_lower<T, D+1>(M);
 
 		return sgm::Make_Family(M, g);
 	}();
 
 	
-	s3d::Vector<T, D + 1> const x = M.inv()*g;
+	s3d::Vector<T, D+1> const x = M.inv()*g;
 	s3d::Vector<T, D> const c = x.head(D);
 	T const r = std::sqrt( x(D) + c.sqr_norm() );
 

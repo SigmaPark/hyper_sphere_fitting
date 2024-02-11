@@ -9,6 +9,7 @@
 #define _PRAC_SUMITH_YD_FIT_SPHERE_
 
 #include "Sphere_Fitting_interface.hpp"
+#include "_Matrix_operations.hpp"
 
 
 namespace prac
@@ -46,13 +47,15 @@ auto prac::Sumith_YD_fit_sphere(CON const& con)-> sgm::Array<T, D+1>
 		for(auto const& p : con)
 		{
 			auto const& v = sph_fit::To_Vector<T, D>(p);
-			s3d::Matrix<T, D, D> const vdv = v.dyadic(v);
-			
-			N += 1;
+			auto const uvdv = mat_op_helper::Self_dyadic_upper<T, D>(v);
+
+			++N;
 			S1 += v;
-			S2 += vdv;
-			S3 += diag_f(vdv).dyadic(v);
+			S2 += uvdv;
+			S3 += diag_f(uvdv).dyadic(v);
 		}
+
+		mat_op_helper::Copy_upper_to_lower<T, D>(S2);
 
 		return sgm::Make_Family(N, S1, S2, S3);
 	}();
@@ -80,7 +83,7 @@ auto prac::Sumith_YD_fit_sphere(CON const& con)-> sgm::Array<T, D+1>
 		return res;
 	}();
 
-	s3d::Matrix<T, D, D> const A = 2*( S1.dyadic(S1) - N*S2 );
+	s3d::Matrix<T, D, D> const A = 2*( mat_op_helper::Self_dyadic<T, D>(S1) - N*S2 );
 	s3d::Vector<T, D> const b = tr_S2*S1 - N*S3_colsum;
 	
 	s3d::Vector<T, D> const c = A.inv()*b;
