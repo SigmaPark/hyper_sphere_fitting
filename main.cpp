@@ -162,7 +162,7 @@ int main()
 	auto constexpr gaussian_noise_sigma = real_t(10);
 	auto constexpr partial_rate = real_t(0.6);
 
-	auto constexpr nof_tests = size_t(100);
+	auto constexpr nof_tests = size_t(1000);
 	auto constexpr ran_seed = std::uint64_t(777);
 	
 	std::mt19937_64 ran_engine{ran_seed};

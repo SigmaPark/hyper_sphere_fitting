@@ -135,7 +135,6 @@ auto prac::Levenberg_Marquardt_fit_sphere_impl<T, D, CON>
 	_mat_t JJt = _mat_t::Zero();
 	_vec_t Jf = _vec_t::Zero();
 	T s = 0;
-	std::size_t n = 0;
 
 	for(auto const& pt : con)
 	{
@@ -143,7 +142,6 @@ auto prac::Levenberg_Marquardt_fit_sphere_impl<T, D, CON>
 		auto const e = _err(v, c, r);
 		auto const del_e = _del_err(v, c);
 
-		++n;
 		s += e*e;
 		Jf += e*del_e;
 		JJt += del_e.dyadic(del_e);
@@ -151,7 +149,7 @@ auto prac::Levenberg_Marquardt_fit_sphere_impl<T, D, CON>
 
 	return 
 	{	( JJt + lambda*_Diag_mat(JJt) ).inv()*Jf
-	, 	s / n
+	, 	s
 	};
 }
 //--------//--------//--------//--------//-------#//--------//--------//--------//--------//-------#
