@@ -8,8 +8,8 @@
 #ifndef _PRAC_TEST_SPHERE_FITTING_
 #define _PRAC_TEST_SPHERE_FITTING_
 
-#include "S3D/Euclid/Euclid.hpp"
-#include "SGM/Functor/Functor.hpp"
+#include "Euclid/Euclid.hpp"
+#include "Functor/Functor.hpp"
 #include <cstdint>
 #include <cassert>
 #include <random>

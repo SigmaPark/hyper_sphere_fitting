@@ -8,7 +8,7 @@
 #ifndef _PRAC_MATRIX_OPERATIONS_
 #define _PRAC_MATRIX_OPERATIONS_
 
-#include "S3D/Hamilton/Hamilton.hpp"
+#include "Hamilton/Hamilton.hpp"
 
 
 namespace prac::mat_op_helper

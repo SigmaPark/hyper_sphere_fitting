@@ -1,30 +1,13 @@
-#   SPDX-FileCopyrightText: (c) 2024 Jin-Eon Park <greengb@naver.com> <sigma@gm.gist.ac.kr>
-#   SPDX-License-Identifier: MIT License
-#=========#=========#=========#=========#=========#=========#=========#=========#=========#=========
+cmake_minimum_required(VERSION 3.5)
 
-
-cmake_minimum_required(VERSION 3.0)
-
-project(Sphere_Fitting)
-
-set(CMAKE_CXX_STANDARD 17)
-
-add_executable(
-    Sphere_Fitting
-    main.cpp
+project(
+	Hyper_Sphere_Fitting_Methods
+	LANGUAGES CXX
 )
 
-set(EIGEN_LIBRARY_DIR $ENV{EIGEN_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-target_include_directories(
-    Sphere_Fitting
-    PRIVATE
-    ${EIGEN_LIBRARY_DIR}
-    sigma/include
-)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-target_compile_definitions(
-    Sphere_Fitting
-    PRIVATE
-    -DSGM_CXX_STANDARD=2017
-)
+add_subdirectory(test)

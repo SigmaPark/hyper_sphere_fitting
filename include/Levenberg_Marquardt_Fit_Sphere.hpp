@@ -10,7 +10,7 @@
 
 #include <limits>
 #include "Sphere_Fitting_interface.hpp"
-#include "SGM/Abbreviable/Nullable.hpp"
+#include "Abbreviable/Nullable.hpp"
 
 
 namespace prac

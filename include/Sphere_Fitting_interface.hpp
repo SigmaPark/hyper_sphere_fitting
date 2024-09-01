@@ -8,8 +8,8 @@
 #ifndef _PRAC_SPHERE_FITTING_INTERFACE_
 #define _PRAC_SPHERE_FITTING_INTERFACE_
 
-#include "SGM/Array/Array.hpp"
-#include "S3D/Euclid/Euclid.hpp"
+#include "Array/Array.hpp"
+#include "Euclid/Euclid.hpp"
 
 
 namespace prac::sph_fit
