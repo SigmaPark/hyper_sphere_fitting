@@ -2,6 +2,8 @@
 #   SPDX-License-Identifier: MIT License
 #=========#=========#=========#=========#=========#=========#=========#=========#=========#=========
 
+git submodule update --init --recursive
+
 rm -rf ./build
 
 mkdir build

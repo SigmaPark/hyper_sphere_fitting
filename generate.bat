@@ -4,6 +4,8 @@
 
 @echo off
 
+git submodule update --init --recursive
+
 powershell rm -recurse -force ./build
 
 mkdir build
