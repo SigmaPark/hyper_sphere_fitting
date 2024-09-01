@@ -27,38 +27,38 @@ auto prac::Sumith_YD_fit_sphere(CON const& con)-> sgm::Array<T, D+1>
 	using std::size_t;
 
 	auto trace_f
-	= [](s3d::Matrix<T, D, D> const& M) noexcept-> T
-	{
-		auto res = T(0);
+	=	[](s3d::Matrix<T, D, D> const& M) noexcept-> T
+		{
+			auto res = T(0);
 
-		for(size_t i = 0;  i < D;  ++i)
-			res += M(i, i);
+			for(size_t i = 0;  i < D;  ++i)
+				res += M(i, i);
 
-		return res;
-	};
+			return res;
+		};
 
 	auto const [N, S1, S2, S3]
-	= [trace_f, &con]
-	{
-		size_t N = 0;
-		s3d::Vector<T, D> S1 = decltype(S1)::Zero(), S3 = S1;
-		s3d::Matrix<T, D, D> S2 = decltype(S2)::Zero();
-
-		for(auto const& p : con)
+	=	[trace_f, &con]
 		{
-			auto const& v = sph_fit::To_Vector<T, D>(p);
-			auto const uvdv = mat_op_helper::Self_dyadic_upper<T, D>(v);
+			size_t N = 0;
+			s3d::Vector<T, D> S1 = decltype(S1)::Zero(), S3 = S1;
+			s3d::Matrix<T, D, D> S2 = decltype(S2)::Zero();
 
-			++N;
-			S1 += v;
-			S2 += uvdv;
-			S3 += trace_f(uvdv)*v;
-		}
+			for(auto const& p : con)
+			{
+				auto const& v = sph_fit::To_Vector<T, D>(p);
+				auto const uvdv = mat_op_helper::Self_dyadic_upper<T, D>(v);
 
-		mat_op_helper::Copy_upper_to_lower<T, D>(S2);
+				++N;
+				S1 += v;
+				S2 += uvdv;
+				S3 += trace_f(uvdv)*v;
+			}
 
-		return sgm::Make_Family(N, S1, S2, S3);
-	}();
+			mat_op_helper::Copy_upper_to_lower<T, D>(S2);
+
+			return sgm::Make_Family(N, S1, S2, S3);
+		}();
 
 	auto const tr_S2 = trace_f(S2);
 

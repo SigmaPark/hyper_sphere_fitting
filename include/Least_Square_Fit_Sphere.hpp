@@ -27,35 +27,35 @@ auto prac::Least_square_fit_sphere(CON const& con)-> sgm::Array<T, D+1>
 	using std::size_t;
 
 	auto const [M, g]
-	= [&con]
-	{
-		s3d::Matrix<T, D+1, D+1> M = decltype(M)::Zero();
-		s3d::Vector<T, D+1> g = decltype(g)::Zero();
-
-		for(auto const& p : con)
+	=	[&con]
 		{
-			auto const& v = sph_fit::To_Vector<T, D>(p);
-			auto const vv = v.sqr_norm();
-			
-			auto const a 
-			= [&v]() noexcept-> s3d::Vector<T, D+1>
+			s3d::Matrix<T, D+1, D+1> M = decltype(M)::Zero();
+			s3d::Vector<T, D+1> g = decltype(g)::Zero();
+
+			for(auto const& p : con)
 			{
-				s3d::Vector<T, D+1> res;
+				auto const& v = sph_fit::To_Vector<T, D>(p);
+				auto const vv = v.sqr_norm();
+				
+				auto const a 
+				=	[&v]() noexcept-> s3d::Vector<T, D+1>
+					{
+						s3d::Vector<T, D+1> res;
 
-				res.head(D) = 2*v;
-				res(D) = 1;
+						res.head(D) = 2*v;
+						res(D) = 1;
 
-				return res;
-			}();
+						return res;
+					}();
 
-			M += mat_op_helper::Self_dyadic_upper<T, D+1>(a);
-			g += vv*a;
-		}
+				M += mat_op_helper::Self_dyadic_upper<T, D+1>(a);
+				g += vv*a;
+			}
 
-		mat_op_helper::Copy_upper_to_lower<T, D+1>(M);
+			mat_op_helper::Copy_upper_to_lower<T, D+1>(M);
 
-		return sgm::Make_Family(M, g);
-	}();
+			return sgm::Make_Family(M, g);
+		}();
 
 	
 	s3d::Vector<T, D+1> const x = M.inv()*g;

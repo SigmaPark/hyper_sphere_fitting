@@ -151,12 +151,12 @@ int main()
 	using Vec_t = s3d::Vector<real_t, Dim>;
 
 	auto const ran_sphere
-	= []()-> prac::test::Random_hyper_sphere<real_t, Dim>
-	{
-		auto constexpr max_position = real_t(500), sphere_radius = real_t(1'000);
+	=	[]()-> prac::test::Random_hyper_sphere<real_t, Dim>
+		{
+			auto constexpr max_position = real_t(500), sphere_radius = real_t(1'000);
 
-		return {-max_position, max_position, sphere_radius, 0};
-	}();
+			return {-max_position, max_position, sphere_radius, 0};
+		}();
 	
 	auto constexpr nof_points_per_test = size_t(1'000);
 	auto constexpr gaussian_noise_sigma = real_t(10);
@@ -181,13 +181,13 @@ int main()
 		auto const& sample_points = testbed.sample_points();
 
 
-		Add_test_result
+		::Add_test_result
 		(	fitting_method["Least Square"], measure_f
 		, 	SGM_1st_Class_Citizen(prac::Least_square_fit_sphere, <real_t, Dim>)
 		,	sample_points
 		);
 
-		Add_test_result
+		::Add_test_result
 		(	fitting_method["Sumith YD"], measure_f
 		, 	SGM_1st_Class_Citizen(prac::Sumith_YD_fit_sphere, <real_t, Dim>)
 		,	sample_points
@@ -196,7 +196,7 @@ int main()
 		{
 			size_t constexpr max_iteration = 200;
 
-			Add_test_result
+			::Add_test_result
 			(	fitting_method["Eberly's iteration"], measure_f
 			, 	SGM_1st_Class_Citizen(prac::Eberly_fit_sphere, <real_t, Dim>)
 			,	sample_points, max_iteration
@@ -218,7 +218,7 @@ int main()
 			for(auto& t : initial_sphere)
 				t += nd(ran_eng);
 
-			Add_test_result
+			::Add_test_result
 			(	fitting_method["Levenberg-Marquardt"], measure_f
 			, 	SGM_1st_Class_Citizen(prac::Levenberg_Marquardt_fit_sphere, <real_t, Dim>)
 			,	sample_points, initial_sphere
@@ -229,7 +229,7 @@ int main()
 			size_t constexpr nof_trials = 1000;
 			real_t constexpr thres_val = 20;
 
-			Add_test_result
+			::Add_test_result
 			(	fitting_method["MSAC"], measure_f
 			, 	SGM_1st_Class_Citizen(prac::MSAC_fit_sphere, <real_t, Dim>)
 			,	sample_points, nof_trials, thres_val

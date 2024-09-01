@@ -28,17 +28,17 @@ auto prac::Eberly_fit_sphere(CON const& con, std::size_t const max_iteration)
 	using Vec_t = s3d::Vector<T, D>;
 
 	auto const xbar
-	= [&con]()-> Vec_t
-	{
-		Vec_t sx = decltype(sx)::Zero();
-		std::size_t n = 0;
+	=	[&con]()-> Vec_t
+		{
+			Vec_t sx = decltype(sx)::Zero();
+			std::size_t n = 0;
 
-		for(auto const& pt : con)
-			sx += sph_fit::To_Vector<T, D>(pt),
-			++n;
+			for(auto const& pt : con)
+				sx += sph_fit::To_Vector<T, D>(pt),
+				++n;
 
-		return sx / n;
-	}();
+			return sx / n;
+		}();
 
 	auto c = xbar;
 

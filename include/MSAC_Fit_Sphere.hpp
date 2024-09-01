@@ -110,16 +110,16 @@ auto prac::_msac_impl::Random_sphere_generation<T, D>
 ::	operator()() noexcept-> sgm::Family<Vec_t, T, T>
 {
 	auto const indices
-	= [&ran_eng = _ran_eng, max_num =_ptrs.size() - 1]
-	{
-		std::uniform_int_distribution<std::size_t> uid(0, max_num);
-		std::set<std::size_t> idx_set;
+	=	[&ran_eng = _ran_eng, max_num =_ptrs.size() - 1]
+		{
+			std::uniform_int_distribution<std::size_t> uid(0, max_num);
+			std::set<std::size_t> idx_set;
 
-		while(idx_set.size() != D+1)
-			idx_set.emplace( uid(ran_eng) );
+			while(idx_set.size() != D+1)
+				idx_set.emplace( uid(ran_eng) );
 
-		return idx_set;
-	}();
+			return idx_set;
+		}();
 
 	auto const [sph_c, sph_r] = _sphere(indices);
 	auto const score = _score(sph_c, sph_r);
@@ -136,17 +136,17 @@ auto prac::MSAC_fit_sphere(CON const& con, std::size_t const trials, T const thr
 	using Vec_t = typename _msac_impl::Random_sphere_generation<T, D>::Vec_t;
 
 	auto ran_sph_gen
-	= [threshold, &con]()-> _msac_impl::Random_sphere_generation<T, D>
-	{
-		sgm::Array<Vec_t const*> sample_ptrs( sgm::Size(con) );
+	=	[threshold, &con]()-> _msac_impl::Random_sphere_generation<T, D>
+		{
+			sgm::Array<Vec_t const*> sample_ptrs( sgm::Size(con) );
 
-		for(auto const& pt : con)
-			sample_ptrs >> &sph_fit::To_Vector<T, D>(pt);
+			for(auto const& pt : con)
+				sample_ptrs >> &sph_fit::To_Vector<T, D>(pt);
 
-		assert(sample_ptrs.size() > D+1);
+			assert(sample_ptrs.size() > D+1);
 
-		return {sgm::Move(sample_ptrs), threshold};
-	}();
+			return {sgm::Move(sample_ptrs), threshold};
+		}();
 
 	Vec_t c;
 	T r;

@@ -70,19 +70,20 @@ auto prac::test::Random_hyper_sphere<T, D>
 ::	get(std::mt19937_64& ran_eng) const noexcept-> Hyper_Sphere<T, D>
 {
 	auto const center
-	= [min_x = _min_x, max_x = _max_x, &ran_eng]()-> s3d::Vector<T, D>
-	{
-		std::uniform_real_distribution<T> urd(min_x, max_x);
-		s3d::Vector<T, D> res;
+	=	[min_x = _min_x, max_x = _max_x, &ran_eng]()-> s3d::Vector<T, D>
+		{
+			std::uniform_real_distribution<T> urd(min_x, max_x);
+			s3d::Vector<T, D> res;
 
-		for( std::size_t k = 0;  k < D;  res(k++) = urd(ran_eng) );
+			for( std::size_t k = 0;  k < D;  res(k++) = urd(ran_eng) );
 
-		return res;
-	}();
+			return res;
+		}();
 
 	auto const radius
-	=	_sigma_r == 0 ? _mu_r
-	:	std::normal_distribution<T>(_mu_r, _sigma_r)(ran_eng);
+	=	_sigma_r == 0 
+		?	_mu_r
+		:	std::normal_distribution<T>(_mu_r, _sigma_r)(ran_eng);
 
 	return {center, radius};
 }
@@ -137,7 +138,9 @@ auto prac::test::Test_Sphere_Fitting<T, D>
 , 	T const gaussian_noise_sigma, T const partial_rate, std::mt19937_64& ran_engine
 )->	void
 {
-	_points = _Generate_samples(nof_points, sphere, gaussian_noise_sigma, partial_rate, ran_engine);
+	_points 
+	=	_Generate_samples(nof_points, sphere, gaussian_noise_sigma, partial_rate, ran_engine);
+
 	_answer_sphere = sphere;
 }
 
@@ -167,28 +170,28 @@ auto prac::test::Test_Sphere_Fitting<T, D>
 ::	dc_dr_rmse(sgm::Array<T, D+1> const& fit_sphere) const noexcept-> sgm::Array<T, 3>
 {
 	auto const fit_sph
-	= [&fit_sphere]()-> Sphere_t
-	{
-		Vec_t c;
+	=	[&fit_sphere]()-> Sphere_t
+		{
+			Vec_t c;
 
-		for(std::size_t k = 0;  k < D;  ++k)
-			c(k) = fit_sphere[k];
+			for(std::size_t k = 0;  k < D;  ++k)
+				c(k) = fit_sphere[k];
 
-		return {c, fit_sphere[D]};
-	}();
+			return {c, fit_sphere[D]};
+		}();
 
 	auto const rmse_dist
-	= [&fit_sph, &points = sample_points()]
-	{
-		auto sqr_f = [](T const t){  return t*t;  };
+	=	[&fit_sph, &points = sample_points()]
+		{
+			auto sqr_f = [](T const t){  return t*t;  };
 
-		T sqrsum = 0;
+			T sqrsum = 0;
 
-		for(auto const& pt : points)
-			sqrsum += sqr_f( (pt - fit_sph.center).norm() - fit_sph.radius );
+			for(auto const& pt : points)
+				sqrsum += sqr_f( (pt - fit_sph.center).norm() - fit_sph.radius );
 
-		return std::sqrt(sqrsum/points.size());
-	}();
+			return std::sqrt(sqrsum/points.size());
+		}();
 
 	T const 
 		dc = s3d::Distance(fit_sph.center, original_sphere().center),
@@ -212,55 +215,55 @@ auto prac::test::Test_Sphere_Fitting<T, D>::_Generate_samples
 	using UnitVec_t = s3d::UnitVec<T, D>;
 
 	auto uniform_random_direction_f
-	= [&rng = ran_engine]()-> UnitVec_t
-	{
-		std::uniform_real_distribution<T> urd(-1, 1);
-		Vec_t pt;
+	=	[&rng = ran_engine]()-> UnitVec_t
+		{
+			std::uniform_real_distribution<T> urd(-1, 1);
+			Vec_t pt;
 
-		do
-			for( std::size_t k = 0;  k < D;  pt(k++) = urd(rng) );
-		while( pt.sqr_norm() < T(1e-6) );
+			do
+				for( std::size_t k = 0;  k < D;  pt(k++) = urd(rng) );
+			while( pt.sqr_norm() < T(1e-6) );
 
-		return pt;
-	};
+			return pt;
+		};
 
 	auto uniform_sphere_f
-	= [&urdirec_f = uniform_random_direction_f](std::size_t const n)-> sgm::Array<Vec_t>
-	{
-		sgm::Array<Vec_t> res(n);
+	=	[&urdirec_f = uniform_random_direction_f](std::size_t const n)-> sgm::Array<Vec_t>
+		{
+			sgm::Array<Vec_t> res(n);
 
-		while(res.size() != n)
-			res >> urdirec_f().vec();
+			while(res.size() != n)
+				res >> urdirec_f().vec();
 
-		return res;
-	};
+			return res;
+		};
 
 	auto points_on_sphere_f
-	= [&rng = ran_engine, &urdirec_f = uniform_random_direction_f, sph = answer_sphere]
-	(sgm::Array<Vec_t> points, T const sigma)-> decltype(points)
-	{
-		std::normal_distribution<T> nd(0, sigma);
+	=	[&rng = ran_engine, &urdirec_f = uniform_random_direction_f, sph = answer_sphere]
+		(sgm::Array<Vec_t> points, T const sigma)-> decltype(points)
+		{
+			std::normal_distribution<T> nd(0, sigma);
 
-		for(auto& pt : points)
-			pt = sph.center + sph.radius*pt + nd(rng)*urdirec_f();
+			for(auto& pt : points)
+				pt = sph.center + sph.radius*pt + nd(rng)*urdirec_f();
 
-		return points;
-	};
+			return points;
+		};
 
 	auto partial_sphere_f
-	= [cut_direction = uniform_random_direction_f(), sph = answer_sphere]
-	(sgm::Array<Vec_t> points, T const rate)-> decltype(points)
-	{
-		if(rate >= 1)
-			return points;
+	=	[cut_direction = uniform_random_direction_f(), sph = answer_sphere]
+		(sgm::Array<Vec_t> points, T const rate)-> decltype(points)
+		{
+			if(rate >= 1)
+				return points;
 
-		s3d::Plane<T, D> const cut_plane
-		(	sph.center + sph.radius*(2*rate - 1)*cut_direction
-		,	cut_direction
-		);
+			s3d::Plane<T, D> const cut_plane
+			(	sph.center + sph.radius*(2*rate - 1)*cut_direction
+			,	cut_direction
+			);
 
-		return sgm::fp::Filter_f(  points, SGM_LAMBDA( cut_plane.signed_dist_to(_0) < 0 )  );
-	};
+			return sgm::fp::Filter_f(  points, SGM_LAMBDA( cut_plane.signed_dist_to(_0) < 0 )  );
+		};
 
 	return
 	partial_sphere_f
