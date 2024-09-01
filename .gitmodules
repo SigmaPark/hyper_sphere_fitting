@@ -1,0 +1,3 @@
+[submodule "sigma_3D"]
+	path = sigma_3D
+	url = git@ssh.dev.azure.com:v3/greengb/sigma_3D/sigma_3D
